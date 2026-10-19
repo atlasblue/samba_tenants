@@ -33,10 +33,6 @@
     .healthy { color:var(--green); background:#35d39a18; }
     .unhealthy { color:var(--red); background:#ff6b7a18; }
     .error { display:none; margin:0 0 18px; border:1px solid #ff6b7a55; background:#ff6b7a14; color:#ffd2d7; padding:12px 15px; border-radius:12px; }
-    .account-note { display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; margin:0 0 12px; padding:13px 16px; background:var(--panel); border:1px solid var(--line); border-radius:14px; }
-    .account-label { color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
-    .account-item { color:var(--text); }
-    code { color:var(--blue); font:600 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
     footer { color:var(--muted); margin-top:16px; font-size:12px; }
     @media (max-width:700px) { main { padding:28px 14px 40px; } header { display:block; } .pulse { margin-top:18px; } .summary { grid-template-columns:1fr; } }
   </style>
@@ -59,14 +55,9 @@
   </section>
 
   <div class="error" id="error" role="alert"></div>
-  <div class="account-note" role="note" aria-label="Default tenant accounts">
-    <span class="account-label">Default tenant accounts</span>
-    <span class="account-item">Admin: <code>admin@&lt;domainname&gt;</code></span>
-    <span class="account-item">Consumer: <code>consumer@&lt;domainname&gt;</code></span>
-  </div>
   <section class="table-wrap" aria-label="Samba tenant status">
     <table>
-      <thead><tr><th>Container name</th><th>Status</th><th>Domain name</th><th>Domain URL</th><th>Port</th><th>Container state</th></tr></thead>
+      <thead><tr><th>Domain Name</th><th>Domain URL</th><th>Status</th><th>Admin User</th><th>Consumer User</th><th>Password</th></tr></thead>
       <tbody id="tenant-rows"><tr><td colspan="6">Loading tenant status…</td></tr></tbody>
     </table>
   </section>
@@ -86,12 +77,12 @@
       document.querySelector('#unhealthy').textContent = tenants.length - healthy;
       document.querySelector('#tenant-rows').innerHTML = tenants.map(t => `
         <tr>
-          <td class="name">${esc(t.container_name)}</td>
-          <td><span class="badge ${t.status === 'healthy' ? 'healthy' : 'unhealthy'}">${esc(t.status)}</span></td>
-          <td>${esc(t.domain_name)}</td>
+          <td class="name">${esc(t.domain_name)}</td>
           <td><a class="url" href="${esc(t.domain_url)}">${esc(t.domain_url)}</a></td>
-          <td>${esc(t.port)}</td>
-          <td>${esc(t.container_state)}</td>
+          <td><span class="badge ${t.status === 'healthy' ? 'healthy' : 'unhealthy'}">${esc(t.status)}</span></td>
+          <td>${esc(t.admin_user)}</td>
+          <td>${esc(t.consumer_user)}</td>
+          <td>${esc(t.password)}</td>
         </tr>`).join('');
       const error = document.querySelector('#error');
       error.textContent = payload.error || '';
