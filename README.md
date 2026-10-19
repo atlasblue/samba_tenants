@@ -1,57 +1,75 @@
-# Samba tenant deployer and dashboard
+# Samba Tenant Dashboard
 
-A Python conversion of the Bash workflow plus a Flask dashboard showing:
+Flask dashboard for Samba tenant containers.
 
-- container name
-- `healthy` / `unhealthy` status
-- domain name
-- LDAP domain URL (`ldap://domain:published-port`)
-- default account patterns: `admin@domainname` and `consumer@domainname`
-- published port and Docker container state
+## Dashboard columns
 
-## Deploy tenants
+| Domain Name | Domain URL | Status | Admin User | Consumer User | Password |
+|---|---|---|---|---|---|
+| acme.fr | ldap://acme.fr:3891 | healthy | admin@acme.fr | consumer@acme.fr | Nutanix/4u |
 
-Run on the Docker host:
+The dashboard has no login password.
 
+## Install on Ubuntu 24.04 and plus
+
+### 1. Install prerequisites
 ```bash
-cd /opt/samba-tenant-dashboard
+sudo apt update
+sudo apt install -y ca-certificates curl git python3 python3-venv python3-pip
+```
+### 2. Install Docker
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  -o /etc/apt/keyrings/docker.asc
+
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+sudo tee /etc/apt/sources.list.d/docker.sources > /dev/null <<DOCKER_REPO
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+DOCKER_REPO
+
+sudo apt update
+
+sudo apt install -y docker-ce docker-ce-cli containerd.io \
+  docker-buildx-plugin docker-compose-plugin
+
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+newgrp docker
+```
+### 3. Clone the project
+```bash
+sudo git clone https://github.com/atlasblue/samba_tenants.git \
+  /opt/samba_tenant_dashboard
+
+sudo chown -R "$USER:$USER" /opt/samba_tenant_dashboard
+cd /opt/samba_tenant_dashboard
+```
+### 4. Configure Python
+```bash
 python3 -m venv .venv
-. .venv/bin/activate
+source .venv/bin/activate
 pip install -r requirements.txt
-export SAMBA_PASSWORD='use-a-strong-secret'
+```
+### 5. Configure the Samba password
+```bash
+echo "SAMBA_PASSWORD=Nutanix/4u" > .env
+chmod 600 .env
+set -a
+source .env
+set +a
+```
+### 6. Deploy Samba tenants
+```bash
+source .venv/bin/activate
 python deploy.py
 ```
+The Dashboard is available at http://SERVER_IP:8080
 
-To also perform the original host preparation steps, run:
-
-```bash
-sudo -E .venv/bin/python deploy.py --prepare-host
-```
-
-`--prepare-host` changes firewalld/SELinux settings and may install Docker. Use it only when that is intended for the host.
-
-## Run the dashboard directly
-
-The dashboard must be able to read the Docker socket:
-
-```bash
-python app.py
-```
-
-Open <http://localhost:8080>. The API is available at `/api/tenants`; `/healthz` is a process health endpoint.
-
-## Run the dashboard with Docker Compose
-
-```bash
-docker compose -f docker-compose.yml up -d --build
-```
-
-The compose service mounts the Docker socket read-only. Do not expose port 8080 publicly without adding authentication and TLS.
-
-## Health behavior
-
-The generated base image includes a Docker `HEALTHCHECK` that verifies Samba's LDAP port inside the container. If an existing container has no Docker healthcheck, the dashboard falls back to testing the published host port. A missing, stopped, or unreachable container is shown as `unhealthy`.
-
-## Important security note
-
-The original script uses a shared password for all tenants. This version requires `SAMBA_PASSWORD` instead of placing the password in source code, but the password is still passed to the container as an environment variable to preserve the original container behavior. For production, use a secret store and unique credentials per tenant.
