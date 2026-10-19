@@ -2,18 +2,26 @@
 """Flask dashboard for Samba tenant container health."""
 from __future__ import annotations
 
+import os
 import socket
 from datetime import datetime, timezone
 from typing import Any
 
 import docker
 from docker.errors import DockerException, NotFound
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 
 from config import DEFAULT_DOMAINS, SETTINGS
 
 app = Flask(__name__)
 
+
+def dashboard_server_ip() -> str:
+    # Optional fixed IP; otherwise use the IP/hostname used to access the dashboard.
+    return os.getenv("SERVER_IP", "").strip() or request.host.split(":")[0]
+
+def ldap_url(port: int | None) -> str | None:
+    return f"ldap://{dashboard_server_ip()}:{port}" if port else None
 
 def port_for(domain: str) -> int | None:
     return next((port for name, port in DEFAULT_DOMAINS if name == domain), None)
@@ -49,7 +57,7 @@ def tenant_row(container: Any) -> dict[str, Any]:
         "status": health_for(container, port),
         "container_state": container.attrs.get("State", {}).get("Status", "unknown"),
         "domain_name": name,
-        "domain_url": f"ldap://{name}:{port}" if port else None,
+        "domain_url": ldap_url(port),
         "admin_user": f"admin@{name}",
         "consumer_user": f"consumer@{name}",
         "password": "Nutanix/4u",
@@ -79,7 +87,7 @@ def get_tenants() -> dict[str, Any]:
                         "status": "unhealthy",
                         "container_state": "missing",
                         "domain_name": domain,
-                        "domain_url": f"ldap://{domain}:{port}",
+                        "domain_url": ldap_url(port),
                         "admin_user": f"admin@{domain}",
                         "consumer_user": f"consumer@{domain}",
                         "password": "Nutanix/4u",
@@ -104,7 +112,7 @@ def get_tenants() -> dict[str, Any]:
                     "status": "unhealthy",
                     "container_state": "docker unavailable",
                     "domain_name": domain,
-                    "domain_url": f"ldap://{domain}:{port}",
+                    "domain_url": ldap_url(port),
                     "port": port,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
