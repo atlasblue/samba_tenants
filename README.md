@@ -10,7 +10,7 @@ Flask dashboard for Samba tenant containers.
 
 The dashboard has no login password.
 
-## Install on Ubuntu 24.04 and plus
+## Install on Ubuntu 24.04 or later
 
 ### 1. Install prerequisites
 ```bash
@@ -71,5 +71,13 @@ set +a
 source .venv/bin/activate
 python deploy.py
 ```
+### 7. Start the dashboard
+
+```bash
+docker compose down
+docker compose up -d --build
+docker compose ps
+```
+
 The Dashboard is available at http://SERVER_IP:8080
 
