@@ -50,7 +50,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y python3 samba smbclient winbind && rm -rf /var/lib/apt/lists/*
 COPY entrypoint.py /entrypoint.py
 RUN chmod +x /entrypoint.py
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD-SHELL bash -c 'echo > /dev/tcp/127.0.0.1/389' || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD bash -c 'echo > /dev/tcp/127.0.0.1/389' || exit 1
 ENTRYPOINT ["python3", "/entrypoint.py"]
 ''' 
 
