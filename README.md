@@ -1,6 +1,6 @@
-# Samba Tenant Dashboard
+# Intro
 
-Flask dashboard for Samba tenant containers.
+Use this guide to deploy multiple DC Domains in single Server/VM for SP Central Tenants IDPs
 
 ## Dashboard columns
 
